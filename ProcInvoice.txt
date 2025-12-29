@@ -1,0 +1,68 @@
+public bool ProcInvoice(A1955 obeProceso, string SEQ, string SEQ_REG, string SEQ_REG_FE)
+{
+    var exito = false;
+
+    using (var ConexionODBC = new OdbcConnection(ParametersContext.IBMConnectionString))
+    {
+        try
+        {
+            ConexionODBC.ConnectionTimeout = 0;
+            ConexionODBC.Open();
+            using (var cm = new OdbcCommand("CALL PRAXIS.SQP02447(?,?,?,?,?)", ConexionODBC))
+            {
+                cm.CommandType = CommandType.StoredProcedure;
+                cm.CommandTimeout = 0;
+
+                var p1 = new OdbcParameter("IN_CCUST", OdbcType.Char, 3);
+                p1.Direction = ParameterDirection.Input;
+                p1.Value = obeProceso.A1955CCUST;
+                cm.Parameters.Add(p1);
+
+                var p2 = new OdbcParameter("IN_FPRO", OdbcType.Char, 8);
+                p2.Direction = ParameterDirection.Input;
+                p2.Value = obeProceso.A1955FPROC;
+                cm.Parameters.Add(p2);
+
+                var p3 = new OdbcParameter("IN_SEQ", OdbcType.Char, 10);
+                p3.Direction = ParameterDirection.Input;
+                p3.Value = SEQ;
+                cm.Parameters.Add(p3);
+
+                var p4 = new OdbcParameter("IN_SEQREG", OdbcType.Char, 10);
+                p4.Direction = ParameterDirection.Input;
+                p4.Value = SEQ_REG;
+                cm.Parameters.Add(p4);
+
+                var p5 = new OdbcParameter("IN_SEQREG_FE", OdbcType.Char, 10);
+                p5.Direction = ParameterDirection.Input;
+                p5.Value = SEQ_REG_FE;
+                cm.Parameters.Add(p5);
+
+                cm.ExecuteNonQuery();
+
+                exito = true;
+            }
+        }
+        catch (OdbcException e)
+        {
+            exito = false;
+            var log = new LogException();
+            log.WriteLogFile("AM_INVOICE_ISERIES", "ProcInvoice", e);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            exito = false;
+            var log = new LogException();
+            log.WriteLogFile("AM_INVOICE_ISERIES", "ProcInvoice", ex);
+            throw;
+        }
+        finally
+        {
+            ConexionODBC.Close();
+            ConexionODBC.Dispose();
+        }
+    }
+
+    return exito;
+}
